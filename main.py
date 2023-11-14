@@ -1,3 +1,10 @@
+"""
+    Murad:
+    CHECK THE [TODO]: 's!!!!
+
+    VERY IMPORTANT!!!!
+"""
+
 from sqlite3 import Error
 from dotenv import load_dotenv
 from db import db_connect;
@@ -22,7 +29,26 @@ class Bot(discord.Client):
 
     async def on_message(self, message):
         print(f'Message from {message.author}: {message.content}')
-        self.determine_text_appropriateness(message)
+
+        # Check if from bot
+        if message.author == self.user:
+            return
+
+        result = self.determine_text_appropriateness(message)
+        if result != 0:
+            # Delete message
+            await message.delete()
+            # Send warning to user
+            await message.author.send("Your message was inappropriate. Please refrain from sending inappropriate messages.")
+
+            return
+
+        # [TODO]: ADD POINTS TO A GRAPH FOR EACH USER
+        # [TODO]: INCREMENT 'amount_of_posts' FOR EACH USER
+
+        channel_send = message.channel.name
+        #[TODO]: SAVE THE CHANNEL NAME TO THE GRAPH FOR EACH USER
+        #[NOTE]: If there is aleady a channel name in the graph, then remove it and add the new one
 
         # Check if the message starts with the ! prefix
         if message.content.startswith('!'):
@@ -43,8 +69,11 @@ class Bot(discord.Client):
                        "If the message IS appropriate, then return a 0."
                        "Here is the message in question: " + message.content)
 
-            #[TODO]: Add points to a yamean graph for each user
-            print(self.get_chatgpt_response(automod))
+            #[TODO]: IF THE MESSAGE IS INAPPROPRIATE, THEN ADD THE POINTS TO A GRAPH FOR EACH USER
+
+            response = self.get_chatgpt_response(automod)
+            print(response)
+            return response
 
         except Exception as e:
             print(e)
@@ -52,8 +81,12 @@ class Bot(discord.Client):
     # Translates text from one language to another using ChatGPT openAI
     async def translate_text(self, message):
         try:
-            translate_prompt = ("Translate the following text from its curent language to English: " + message.content)
-            print(self.get_chatgpt_response(translate_prompt))
+            translate_prompt = ("Translate the following text from its current language to English."
+                                "Only send the traslation, nothing else.: " + message.content)
+            text_to_send = self.get_chatgpt_response(translate_prompt)
+
+            # Send message to chat
+            message.send(text_to_send)
 
         except Exception as e:
             print(e)
@@ -63,6 +96,10 @@ class Bot(discord.Client):
             return "Please enter a message to generate a response."
         else:
             input_text = " ".join(args)
+
+            #[TODO]: SAVE THIS INPUT MESSAGE TO THE GRAPH FOR EACH USER
+            #[NOTE]: If there is aleady a message in the graph, then remove it and add the new one
+
             return self.generate_ai_response(input_text)
 
     async def generate_ai_response(self, input_text):
